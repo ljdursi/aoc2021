@@ -11,7 +11,7 @@ enum struct Direction {
 
 class Submarine {
     public:
-        Submarine(int horiz_start, int depth_start);
+        Submarine(int horiz_start, int depth_start, bool use_aim) : horizontal(horiz_start), depth(depth_start), aim(0), depth_via_aim(use_aim) {};
         void move(Direction direction, int distance);
         int get_depth();
         int get_horizontal();
@@ -19,6 +19,7 @@ class Submarine {
         int horizontal;
         int depth; 
         int aim;
+        bool depth_via_aim;
 };
 
 int Submarine::get_depth() {
@@ -32,36 +33,45 @@ int Submarine::get_horizontal() {
 void Submarine::move(Direction direction, int distance) {
     switch (direction) {
         case Direction::UP:
-            aim -= distance;
-            break;
+            distance = -distance;
         case Direction::DOWN:
-            aim += distance;
+            if (depth_via_aim) {
+                aim += distance;
+            } else {
+                depth += distance;
+            }
             break;
         case Direction::FORWARD:
             horizontal += distance;
-            depth += aim*distance;
+            if (depth_via_aim)
+                depth += aim*distance;
             break;
     }
 }
-
-Submarine::Submarine(int horiz_start, int depth_start) {
-    horizontal = horiz_start;
-    depth = depth_start;
-};
 
 int main() {
     const std::map<std::string, Direction> from_string = {{"forward", Direction::FORWARD},
                                                           {"up", Direction::UP},
                                                           {"down", Direction::DOWN}};
 
-    Submarine sub(0, 0);
+    std::vector<std::tuple<Direction, int>> moves;
+
     std::string dirstr;
     int distance;
     while (std::cin >> dirstr >> distance) {
-        sub.move(from_string.at(dirstr), distance);
+        moves.push_back(std::make_tuple(from_string.at(dirstr), distance));
     }
 
-    std::cout << "Part 1: " << std::endl;
-    std::cout << "   depth: " << sub.get_depth() << " horizontal: " << sub.get_horizontal() << std::endl;
-    std::cout << "   area: " << sub.get_horizontal()*sub.get_depth() << std::endl;
+    for (const bool use_aim : {false, true}) {
+        std::cout << "Use_aim = " << use_aim << std::endl;
+        Submarine sub(0, 0, use_aim);
+
+        for (auto move : moves) 
+            sub.move(std::get<0>(move), std::get<1>(move));
+
+        std::cout << "   depth: " << sub.get_depth() << " horizontal: " << sub.get_horizontal() << std::endl;
+        std::cout << "   area: " << sub.get_horizontal()*sub.get_depth() << std::endl;
+
+        std::cout << std::endl;
+    }
 }
