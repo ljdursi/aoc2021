@@ -54,12 +54,12 @@ int main() {
                                                           {"up", Direction::UP},
                                                           {"down", Direction::DOWN}};
 
-    std::vector<std::tuple<Direction, int>> moves;
+    std::vector<std::pair<Direction, int>> moves;
 
     std::string dirstr;
     int distance;
     while (std::cin >> dirstr >> distance) {
-        moves.push_back(std::make_tuple(from_string.at(dirstr), distance));
+        moves.push_back(std::make_pair(from_string.at(dirstr), distance));
     }
 
     for (const bool use_aim : {false, true}) {
@@ -67,7 +67,7 @@ int main() {
         Submarine sub(0, 0, use_aim);
 
         for (auto move : moves) 
-            sub.move(std::get<0>(move), std::get<1>(move));
+            sub.move(move.first, move.second);
 
         std::cout << "   depth: " << sub.get_depth() << " horizontal: " << sub.get_horizontal() << std::endl;
         std::cout << "   area: " << sub.get_horizontal()*sub.get_depth() << std::endl;
