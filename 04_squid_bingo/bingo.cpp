@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
-#include <string>
 
 std::vector<int> called_numbers(std::string line) {
     std::vector<int> numbers;
@@ -97,18 +96,18 @@ int main() {
     std::cin >> line;
     std::vector<int> calls = called_numbers(line);
 
-    std::vector<int> bingo_board_numbers;
+    std::vector<int> board_numbers;
     int num;
     while (std::cin >> num) {
-        bingo_board_numbers.push_back(num);
+        board_numbers.push_back(num);
     }
 
-    const int nboards = bingo_board_numbers.size() / 25;
+    const int nboards = board_numbers.size() / 25;
     std::vector<Bingo> boards;
 
     for (int i=0; i<nboards; i++) {
-        std::vector<int> bingo_board_numbers_subset = std::vector<int>(bingo_board_numbers.begin() + i*25, bingo_board_numbers.begin() + (i+1)*25);
-        boards.push_back(Bingo(bingo_board_numbers_subset));
+        std::vector<int> subset = std::vector<int>(board_numbers.begin() + i*25, board_numbers.begin() + (i+1)*25);
+        boards.push_back(Bingo(subset));
     }
 
     std::vector<int> winners;
