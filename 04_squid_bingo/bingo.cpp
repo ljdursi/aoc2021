@@ -60,9 +60,9 @@ class Bingo {
                 for (int col=0; col<5; col++) {
                     if (called[row][col]) {
                         ncalled++;
-                        std::cout << "(" << std::setw(2) << bingo_board[row*5 + col] << ")";
+                        std::cout << " (" << std::setw(2) << bingo_board[row*5 + col] << ")";
                     } else {
-                        std::cout << std::setw(4) << bingo_board[row*5 + col];
+                        std::cout << std::setw(4) << bingo_board[row*5 + col] << " ";
                     }
                 }
                 std::cout << std::endl;
@@ -116,15 +116,16 @@ int main() {
 
     for (const int call: calls) {
         for (int i=0; i<nboards; i++) {
+            if (!in_play[i]) 
+                continue;
+
             auto &board=boards[i];
-            if (in_play[i]) {
-                if (board.call(call)) {
-                    int score = board.sum_unmarked()*call;
-                    std::cout << "     BINGO! on card " << i << std::endl;
-                    std::cout << "     score = " << score << std::endl;
-                    winners.push_back(score);
-                    in_play[i] = false;
-                }
+            if (board.call(call)) {
+                int score = board.sum_unmarked()*call;
+                std::cout << "     BINGO! on card " << i << std::endl;
+                std::cout << "     score = " << score << std::endl;
+                winners.push_back(score);
+                in_play[i] = false;
             }
         }
     }
