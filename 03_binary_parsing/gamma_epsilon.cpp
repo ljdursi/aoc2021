@@ -99,5 +99,4 @@ int main() {
     const int co2 = oxygen_or_co2(binary, false);
     std::cout << "  CO2 Scrubber = " << co2 << std::endl;
     std::cout << "  Life Support Rating = " << o2*co2 << std::endl;
-
 }
