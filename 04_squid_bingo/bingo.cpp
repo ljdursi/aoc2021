@@ -22,36 +22,8 @@ class Bingo {
                 for (int col=0; col<5; col++) 
                     called[row][col] = false;
         };
-
-        bool call(const int number) {
-            auto found = std::find(bingo_board.begin(), bingo_board.end(), number);
-            if (found != bingo_board.end()) {
-                const int idx = std::distance(bingo_board.begin(), found);
-                const int row = idx / 5;
-                const int col = idx % 5;
-                called[row][col] = true;
-
-                if (check_row(row)) {
-                    return true;
-                }
-                if (check_col(col)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        int sum_unmarked() {
-            int sum = 0;
-            for (int row=0; row<5; row++) {
-                for (int col=0; col<5; col++) {
-                    if (!called[row][col]) {
-                        sum += bingo_board[row*5 + col];
-                    }
-                }
-            }
-            return sum;
-        }
+        bool call(const int number);
+        int sum_unmarked();
 
         void print() {
             int ncalled = 0;
@@ -89,6 +61,36 @@ class Bingo {
             return true;
         }
 };
+
+bool Bingo::call(const int number) {
+    auto found = std::find(bingo_board.begin(), bingo_board.end(), number);
+    if (found != bingo_board.end()) {
+        const int idx = std::distance(bingo_board.begin(), found);
+        const int row = idx / 5, col = idx % 5;
+        called[row][col] = true;
+
+        if (check_row(row)) {
+            return true;
+        }
+        if (check_col(col)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int Bingo::sum_unmarked() {
+    int sum = 0;
+    for (int row=0; row<5; row++) {
+        for (int col=0; col<5; col++) {
+            if (!called[row][col]) {
+                sum += bingo_board[row*5 + col];
+            }
+        }
+    }
+    return sum;
+}
+
 
 int main() {
     std::string line;
