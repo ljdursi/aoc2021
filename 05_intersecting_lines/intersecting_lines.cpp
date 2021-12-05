@@ -67,6 +67,13 @@ class Line {
 std::string Line::toString() const {
     std::stringstream ss;
     ss << start.toString() << " -> " << end.toString();
+    if (start.x == end.x) {
+        ss << " (vertical ; x-intercept = " << start.x << ") ";
+    } else {
+        const int slope = (end.y - start.y) / (end.x - start.x);
+        ss << " (slope = " << slope << "; ";
+        ss << " y-intercept = " << start.y - slope * start.x << ") ";
+    }
     return ss.str();
 }
 
@@ -165,12 +172,28 @@ std::vector<Point> Line::intersection(const Line other) const {
         return result;
     }
 
-    if (is_collinear(other) || (is_grid_aligned() && other.is_grid_aligned())) {
-        // if both grid aligned, or both collinear, the overlapping bounding box defines the start/end point of the intersection segment
+    if (is_grid_aligned() && other.is_grid_aligned()) {
+        // if both grid aligned collinear, the overlapping bounding box defines the start/end point of the intersection segment
         Line segment(x_range.first, y_range.first, x_range.second, y_range.second);
         for (const Point &p : segment.get_points())
             result.push_back(p);
+    } else if (is_collinear(other)) {
+        // both diagonal with same slope
+        // necessarily both +diag or -diag or else they'd both be grid algined
+        const int slope = (end.y - start.y) / (end.x - start.x);
+        int startx, starty;
+        if (start.x > other.start.x) {
+            startx = start.x;
+            starty = start.y;
+        } else {
+            startx = other.start.x;
+            starty = other.start.y;
+        }
 
+        for (int x=startx; x<=std::min(end.x, other.end.x); x++) {
+            int y = starty + slope * (x - startx);
+            result.push_back(Point{x, y});
+        }
     } else if ((is_left(other.start) ^ is_left(other.end)) && (other.is_left(start) ^ other.is_left(end))) {
         Line l1 = *this;
         Line l2 = other;
@@ -279,11 +302,6 @@ int main() {
             }
         }
     }
-    for (auto point : all_intersection_points) {
-        std::cout << "    " << point.toString() << std::endl;
-    }
     std::cout << "  all intersections: " << all_intersection_points.size() << std::endl;
-
-
     std::cout << "  all intersections on map = " << count << std::endl;
 }
