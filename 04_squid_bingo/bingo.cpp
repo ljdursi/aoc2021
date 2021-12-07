@@ -120,9 +120,8 @@ int main() {
             if (!in_play[i]) 
                 continue;
 
-            auto &board=boards[i];
-            if (board.call(call)) {
-                int score = board.sum_unmarked()*call;
+            if (boards[i].call(call)) {
+                int score = boards[i].sum_unmarked()*call;
                 std::cout << "     BINGO! on card " << i << std::endl;
                 std::cout << "     score = " << score << std::endl;
                 winners.push_back(score);
