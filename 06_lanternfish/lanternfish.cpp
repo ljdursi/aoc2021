@@ -15,10 +15,7 @@ class LanternFishPopulation {
             }
         }
         long size() const {
-            long sum = 0;
-            for (const long daycount: number_at_timer)
-                sum += daycount;
-            return sum;
+            return std::accumulate(number_at_timer.begin(), number_at_timer.end(), 0l);
         }
         std::string to_string() const {
             std::stringstream ss;
@@ -33,7 +30,9 @@ class LanternFishPopulation {
             for (int i=0; i<maxdays; i++)
                 number_at_timer[i] = number_at_timer[i+1];
 
+            // have children
             number_at_timer[maxdays] = nzero;
+            // reset timer
             number_at_timer[maxdays-2] += nzero;
         }
     private:
@@ -61,8 +60,7 @@ int main() {
     std::cout << "  Population after 80 days " << population.size() << std::endl;
 
     std::cout << "Part 2: " << std::endl;
-    for (; day<256; day++) {
+    for (; day<256; day++)
         population.evolve();
-    }
     std::cout << "  Population after 256 days " << population.size() << std::endl;
 }
