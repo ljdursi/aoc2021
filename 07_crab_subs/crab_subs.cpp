@@ -1,4 +1,5 @@
 #include <vector>
+#include <numeric>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -53,11 +54,17 @@ int minfuel_const(std::vector<int> crab_positions) {
 }
 
 int minfuel_linear_brute_force(std::vector<int> crab_positions) {
+    // the minimum fuel in this case falls somwhere between the median and the mean, inclusive
     const int n=crab_positions.size();
-    std::sort(crab_positions.begin(), crab_positions.end());
+
+    float med = median(crab_positions);
+    float mean = std::accumulate(crab_positions.begin(), crab_positions.end(), 0) / float(n);
+
+    int min_pos = std::min(floor(med), floor(mean));
+    int max_pos = std::max(ceil(med), ceil(mean));
 
     int min_fuel = INT_MAX;
-    for (int pos=crab_positions[0]; pos <= crab_positions[n-1]; pos++) {
+    for (int pos=min_pos; pos <= max_pos; pos++) {
         int fuel = fuel_to(crab_positions, pos, false);
         if (fuel < min_fuel)
             min_fuel = fuel;
