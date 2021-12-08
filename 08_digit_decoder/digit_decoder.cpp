@@ -98,9 +98,13 @@ bool parse_input_line(const std::string& line, std::vector<std::string>& inputs,
     return true;
 }
 
+struct Problem {
+    std::vector<std::string> digits;
+    std::vector<std::string> panel;
+};    
+
 int main() {
-    std::vector<std::vector<std::string>> digits;
-    std::vector<std::vector<std::string>> panels;
+    std::vector<struct Problem> problems;
     std::vector<std::vector<int>> decoded_panels;
 
     std::string line;
@@ -109,20 +113,18 @@ int main() {
         std::vector<std::string> panel;
         parse_input_line(line, all_digits, panel);
 
-        digits.push_back(all_digits);
-        panels.push_back(panel);
-        decoded_panels.push_back({0,0,0,0});
+        problems.push_back({all_digits, panel});
+        decoded_panels.push_back({0, 0, 0, 0});
     }
 
-    for (int i=0; i<panels.size(); i++) {
-        std::vector<char> decoder = find_wiring(digits[i]);
-        std::vector<int> decoded_output = apply_wiring_to_panel(decoder, panels[i]);
-        
-        for (int j=0; j<4; j++) {
-            decoded_panels[i][j] = decoded_output[j];
-        }
-    }
+    std::transform(problems.begin(), problems.end(), 
+                   decoded_panels.begin(),
 
+                   [](struct Problem& problem) {
+                    std::vector<char> decoder = find_wiring(problem.digits);
+                    return apply_wiring_to_panel(decoder, problem.panel);
+                   });
+    
     std::cout << "Part 1:" << std::endl;
     int n1478 = 0;
     for (const std::vector<int>& decoded_output : decoded_panels) {
