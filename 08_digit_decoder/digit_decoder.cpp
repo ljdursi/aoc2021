@@ -2,8 +2,11 @@
 #include <map>
 #include <vector>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <sstream>
+#include <algorithm>
+#include <execution>
 
 const std::map<std::set<char>, int> SegmentsToDigit = {
     {{'a','b','c','e','f','g'}, 0}, 
@@ -117,7 +120,8 @@ int main() {
         decoded_panels.push_back({0, 0, 0, 0});
     }
 
-    std::transform(problems.begin(), problems.end(), 
+    std::transform(std::execution::par_unseq,
+                   problems.begin(), problems.end(), 
                    decoded_panels.begin(),
 
                    [](struct Problem& problem) {
