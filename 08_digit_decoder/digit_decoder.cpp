@@ -66,17 +66,17 @@ bool find_decoder(std::vector<std::string>& inputs, std::vector<char>& decoded_w
     return true;
 }
 
-bool decode(const std::vector<char>& wiring, const std::vector<std::string>& outputs, std::vector<int>& result) {
-    for (const std::string& output : outputs) {
-        int newdigit = SegmentsToDigit.at(rewire(output, wiring));
-        result.push_back(newdigit);
+bool apply_wiring(const std::vector<char>& wiring, const std::vector<std::string>& panels, std::vector<int>& result) {
+    for (const std::string& digit : panels) {
+        int decoded_digit = SegmentsToDigit.at(rewire(digit, wiring));
+        result.push_back(decoded_digit);
     }
     return true;
 }
 
-int panel_as_int(const std::vector<int>& result) {
+int panel_as_int(const std::vector<int>& panel_ints) {
     int result_int = 0;
-    for (int digit : result) {
+    for (int digit : panel_ints) {
         result_int *= 10;
         result_int += digit;
     }
@@ -104,32 +104,32 @@ bool parse_input_line(const std::string& line, std::vector<std::string>& inputs,
 
 int main() {
     std::vector<std::vector<std::string>> digits;
-    std::vector<std::vector<std::string>> outputs;
-    std::vector<std::vector<int>> decoded_outputs;
+    std::vector<std::vector<std::string>> panels;
+    std::vector<std::vector<int>> decoded_panels;
 
     std::string line;
     while (std::getline(std::cin, line)) {
         std::vector<std::string> all_digits;
-        std::vector<std::string> output;
-        parse_input_line(line, all_digits, output);
+        std::vector<std::string> panel;
+        parse_input_line(line, all_digits, panel);
 
         digits.push_back(all_digits);
-        outputs.push_back(output);
+        panels.push_back(panel);
     }
 
-    for (int i=0; i<outputs.size(); i++) {
+    for (int i=0; i<panels.size(); i++) {
         std::vector<char> decoder;
         std::vector<int> decoded_output;
 
         assert(find_decoder(digits[i], decoder));
-        decode(decoder, outputs[i], decoded_output);
+        apply_wiring(decoder, panels[i], decoded_output);
         
-        decoded_outputs.push_back(decoded_output);
+        decoded_panels.push_back(decoded_output);
     }
 
     std::cout << "Part 1:" << std::endl;
     int n1478 = 0;
-    for (const std::vector<int>& decoded_output : decoded_outputs) {
+    for (const std::vector<int>& decoded_output : decoded_panels) {
         for (const int digit : decoded_output) {
             if (digit == 1 || digit == 4 || digit == 7 || digit == 8) {
                 n1478++;
@@ -140,7 +140,7 @@ int main() {
 
     std::cout << "Part 2:" << std::endl;
     long outputsum = 0;
-    for (const std::vector<int>& decoded_output : decoded_outputs) {
+    for (const std::vector<int>& decoded_output : decoded_panels) {
         outputsum += panel_as_int(decoded_output);
     }
     std::cout << "    " << outputsum << std::endl;
