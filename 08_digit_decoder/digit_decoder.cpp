@@ -4,7 +4,6 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <iterator>
 
 const std::map<std::set<char>, int> SegmentsToDigit = {
     {{'a','b','c','e','f','g'}, 0}, 
@@ -19,7 +18,7 @@ const std::map<std::set<char>, int> SegmentsToDigit = {
     {{'a','b','c','d','f','g'}, 9}
 };
 
-std::set<char> rewire(const std::string input, const std::vector<char>& wiring) {
+std::set<char> apply_wiring_to_segments(const std::string input, const std::vector<char>& wiring) {
     std::set<char> result;
 
     for (const char c : input) {
@@ -35,7 +34,7 @@ bool validDigit(const std::set<char> &segments) {
 
 bool validWiring(const std::vector<char>&wiring, const std::vector<std::string>& inputs) {
     for (const std::string& input : inputs) {
-        if (!validDigit(rewire(input, wiring))) {
+        if (!validDigit(apply_wiring_to_segments(input, wiring))) {
             return false;
         }
     }
@@ -43,35 +42,32 @@ bool validWiring(const std::vector<char>&wiring, const std::vector<std::string>&
 }
 
 int string_length_compare(const std::string& a, const std::string& b) {
-    return b.length() - a.length();
+    return a.length() < b.length();
 }
 
-bool find_decoder(std::vector<std::string>& inputs, std::vector<char>& decoded_wiring) {
-    std::vector<std::vector<char>> valid_wirings;
+std::vector<char> find_wiring(std::vector<std::string>& inputs) {
     std::vector<char> wiring = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};
 
-    // the shortest inputs elimiate the most possible wirings - use them first
+    // the shortest inputs eliminate the most possible wirings - use them first
     std::sort(inputs.begin(), inputs.end(), string_length_compare);
+
     do {
         if (validWiring(wiring, inputs))
-            valid_wirings.push_back(wiring);
-
+            return wiring;
     } while (std::next_permutation(wiring.begin(), wiring.end()));
 
-    if (valid_wirings.size() != 1) {
-        return false;
-    }
-
-    decoded_wiring = valid_wirings[0];
-    return true;
+    return {};
 }
 
-bool apply_wiring(const std::vector<char>& wiring, const std::vector<std::string>& panels, std::vector<int>& result) {
+std::vector<int> apply_wiring_to_panel(const std::vector<char>& wiring, const std::vector<std::string>& panels) {
+    std::vector<int> result;
+
     for (const std::string& digit : panels) {
-        int decoded_digit = SegmentsToDigit.at(rewire(digit, wiring));
+        int decoded_digit = SegmentsToDigit.at(apply_wiring_to_segments(digit, wiring));
         result.push_back(decoded_digit);
     }
-    return true;
+
+    return result;
 }
 
 int panel_as_int(const std::vector<int>& panel_ints) {
@@ -115,16 +111,16 @@ int main() {
 
         digits.push_back(all_digits);
         panels.push_back(panel);
+        decoded_panels.push_back({0,0,0,0});
     }
 
     for (int i=0; i<panels.size(); i++) {
-        std::vector<char> decoder;
-        std::vector<int> decoded_output;
-
-        assert(find_decoder(digits[i], decoder));
-        apply_wiring(decoder, panels[i], decoded_output);
+        std::vector<char> decoder = find_wiring(digits[i]);
+        std::vector<int> decoded_output = apply_wiring_to_panel(decoder, panels[i]);
         
-        decoded_panels.push_back(decoded_output);
+        for (int j=0; j<4; j++) {
+            decoded_panels[i][j] = decoded_output[j];
+        }
     }
 
     std::cout << "Part 1:" << std::endl;
