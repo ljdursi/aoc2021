@@ -86,13 +86,13 @@ std::vector<int> floodfill_basins(const std::vector<std::vector<int>>& map, cons
 
             basin_ids[i][j] = (basin_id % 26) + 'a';
             basin_size++;
-            if (i > 0 && basin_ids[i-1][j] == '.')
+            if (i > 0)
                 q.push(std::make_pair(i-1, j));
-            if (i < n-1 && basin_ids[i+1][j] == '.')
+            if (i < n-1)
                 q.push(std::make_pair(i+1, j));
-            if (j < m-1 && basin_ids[i][j+1] == '.')
+            if (j < m-1)
                 q.push(std::make_pair(i, j+1));
-            if (j > 0 && basin_ids[i][j-1] == '.')
+            if (j > 0)
                 q.push(std::make_pair(i, j-1));
         }
         basin_sizes.push_back(basin_size);
