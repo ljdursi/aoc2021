@@ -1,6 +1,4 @@
 #include <vector>
-#include <map>
-#include <set>
 #include <queue>
 #include <string>
 #include <iostream>
@@ -16,21 +14,28 @@ struct Cave {
 class CaveGraph {
     public:  
         CaveGraph() {};
-        bool add_vertex(std::string name);
-        bool add_edge(std::string start, std::string end);
-        std::string to_string();
-        std::vector<std::string> get_paths(std::string start, std::string end, int n_small_visits);
+        bool add_vertex(const std::string& name);
+        bool add_edge(const std::string& start, const std::string& end);
+        std::string to_string() const;
+        std::vector<std::string> get_paths(const std::string& start, const std::string& end, const int n_small_visits) const;
     private:
         std::vector<Cave> caves;
         std::vector<std::vector<int>> adjacency_list;
-        std::map<std::string, int> cave_idx;
-        std::string path_to_string(std::vector<int> path);
+        std::string path_to_string(const std::vector<int>& path) const;
+        int get_idx(const std::string& name) const;
 };
 
-bool CaveGraph::add_vertex(std::string name) {
-    if (cave_idx.find(name) != cave_idx.end()) {
-        return false;
+int CaveGraph::get_idx(const std::string& name) const {
+    auto it = std::find_if(caves.begin(), caves.end(), [&name](Cave c) { return c.name == name; });
+    if (it == caves.end()) {
+        return -1;
     }
+    return it->idx;
+}
+
+bool CaveGraph::add_vertex(const std::string& name) {
+    if (get_idx(name) >= 0)
+        return false;
 
     bool small = true;
     for (const char c: name) {
@@ -41,19 +46,17 @@ bool CaveGraph::add_vertex(std::string name) {
     }
     int idx = caves.size();
     caves.push_back({name, idx, small});
-    cave_idx[name] = idx;
 
     adjacency_list.push_back({});
     return true;
 }
 
-bool CaveGraph::add_edge(std::string start, std::string end) {
-    if (cave_idx.find(start) == cave_idx.end() || cave_idx.find(end) == cave_idx.end()) {
-        return false;
-    }
+bool CaveGraph::add_edge(const std::string& start, const std::string& end) {
+    int start_idx = get_idx(start);
+    int end_idx = get_idx(end);
 
-    int start_idx = cave_idx.at(start);
-    int end_idx = cave_idx.at(end);
+    if ((start_idx < 0) || (end_idx < 0))
+        return false;
 
     if (std::find(adjacency_list[start_idx].begin(), adjacency_list[start_idx].end(), end_idx) != adjacency_list[start_idx].end()) {
        return false;
@@ -68,8 +71,13 @@ bool CaveGraph::add_edge(std::string start, std::string end) {
     return true;
 }
 
-std::string CaveGraph::to_string() {
+std::string CaveGraph::to_string() const {
     std::stringstream ss;
+
+    for (const auto& cave: caves) {
+        ss << cave.name << " ";
+    }
+    ss << std::endl;
 
     for (int i=0; i<caves.size(); i++) {
         std::string name = caves[i].name;
@@ -81,7 +89,7 @@ std::string CaveGraph::to_string() {
     return ss.str();
 }
 
-std::string CaveGraph::path_to_string(std::vector<int> path) {
+std::string CaveGraph::path_to_string(const std::vector<int>& path) const {
     std::string delim=",";
     std::stringstream ss;
     bool first = true;
@@ -95,13 +103,12 @@ std::string CaveGraph::path_to_string(std::vector<int> path) {
     return ss.str();
 }
 
-std::vector<std::string> CaveGraph::get_paths(std::string start, std::string end, int n_small_visits = 0) {
-    if (cave_idx.find(start) == cave_idx.end() || cave_idx.find(end) == cave_idx.end()) {
-        return {{}};
-    }
+std::vector<std::string> CaveGraph::get_paths(const std::string& start, const std::string& end, const int n_small_visits = 0) const {
+    int start_idx = get_idx(start);
+    int end_idx = get_idx(end);
 
-    int start_idx = cave_idx.at(start);
-    int end_idx = cave_idx.at(end);
+    if ((start_idx < 0) || (end_idx < 0))
+        return {{}};
 
     std::vector<std::vector<int>> valid_paths;
     std::queue<std::pair<std::vector<int>, int>> path_queue;
@@ -120,7 +127,7 @@ std::vector<std::string> CaveGraph::get_paths(std::string start, std::string end
         } 
 
         for (int next: adjacency_list[last]) {
-            if (caves[next].name == start) // can't visit start twice
+            if (next == start_idx) // can't visit start twice
                 continue;
 
             bool already_visited = (std::find(path.begin(), path.end(), next) != path.end());
