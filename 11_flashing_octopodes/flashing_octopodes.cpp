@@ -9,13 +9,13 @@
 class OctopusGrid {
     public:
         OctopusGrid(std::istream& input);
-        std::string to_string();
-        int n_flashes();
+        std::string to_string() const;
+        int n_flashes() const;
         void evolve();
-        bool all_flashed(); // did all flash in the last round?
+        bool all_flashed() const; // did all flash in the last round?
     private:
         std::vector<std::vector<short int>> grid;
-        std::vector<std::pair<int, int>> neighbours(std::pair<int, int> pos);
+        std::vector<std::pair<int, int>> neighbours(const std::pair<int, int>& pos) const;
         int n, m;
         int nflashes;
         bool allflashed;
@@ -36,7 +36,7 @@ OctopusGrid::OctopusGrid(std::istream& input) : nflashes(0), allflashed(false) {
     m = grid[0].size();
 }
 
-std::string OctopusGrid::to_string() {
+std::string OctopusGrid::to_string() const{
     std::stringstream output;
     for (auto row : grid) {
         for (auto c : row) {
@@ -47,15 +47,15 @@ std::string OctopusGrid::to_string() {
     return output.str();
 }
 
-int OctopusGrid::n_flashes() {
+int OctopusGrid::n_flashes() const {
     return nflashes;
 }
 
-bool OctopusGrid::all_flashed() {
+bool OctopusGrid::all_flashed() const {
     return allflashed;
 }
 
-std::vector<std::pair<int, int>> OctopusGrid::neighbours(std::pair<int, int> pos) {
+std::vector<std::pair<int, int>> OctopusGrid::neighbours(const std::pair<int, int>& pos) const {
     std::vector<std::pair<int, int>> valid_neighbours;
 
     for (int i=-1; i<=+1; i++) {
@@ -128,12 +128,11 @@ int main(int argc, char** argv) {
     std::cout << "   after 100 steps: " << grid.n_flashes() << std::endl;
 
     std::cout << "Part 2:" << std::endl;
-    while (first_allflash == -1) {
+    for (; first_allflash == -1; step++) {
         grid.evolve();
         if (grid.all_flashed() and first_allflash == -1) {
             first_allflash = step+1;
         }
-        step++;
     }
     std::cout << "     first synchronized flash = " << first_allflash << std::endl;
 }
