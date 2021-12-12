@@ -26,7 +26,7 @@ int main() {
 
     for (auto &str : v) {
         std::stack<char> s;
-        bool invalid = false;
+        bool valid = true;
 
         for (auto &c : str) {
             if (opens.find(c) != opens.end()) {
@@ -34,7 +34,7 @@ int main() {
             } else if (closes.find(c) != closes.end()) {
                 if (s.empty() || s.top() != closes.at(c)) {
                     bad_characters.push_back(c);
-                    invalid = true;
+                    valid = false;
                     break;
                 } else {
                     s.pop();
@@ -42,10 +42,7 @@ int main() {
             }
         }
 
-        if (invalid)
-            continue;
-
-        if (!s.empty()) {
+        if (valid && !s.empty()) {
             std::vector<char> incomplete;
             while (!s.empty()) {
                 incomplete.push_back(opens.at(s.top()));
