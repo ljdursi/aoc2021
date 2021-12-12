@@ -3,8 +3,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <array>
-
 
 class OctopusGrid {
     public:
