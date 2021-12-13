@@ -75,7 +75,7 @@ std::vector<int> apply_wiring_to_panel(const std::vector<char>& wiring, const st
 
 int panel_as_int(const std::vector<int>& panel_ints) {
     int result_int = 0;
-    for (int digit : panel_ints) {
+    for (const int digit : panel_ints) {
         result_int *= 10;
         result_int += digit;
     }
