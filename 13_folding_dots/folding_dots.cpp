@@ -82,7 +82,6 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-
     std::ifstream input(argv[1]);    
     std::string line;
     Sheet s;
@@ -109,7 +108,6 @@ int main(int argc, char** argv) {
     std::cout << "      Number of points = " << s.size() << std::endl;
 
     std::cout << "Part 2:" << std::endl;
-    apply_fold(s, folds[0]);
     for (int i=1; i<folds.size(); i++) {
         apply_fold(s, folds[i]);
     }
