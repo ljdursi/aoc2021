@@ -123,6 +123,8 @@ long score_paircounts(const std::string& initial_polymer, const ElemPairCounts& 
     }
 
     // Everything's double counted except the first and last character
+    // Note that by the rules of the insertions (interior to pairs),
+    // the first and last characters will never change
     counts[initial_polymer[0]]--;
     counts[initial_polymer[initial_polymer.length()-1]]--;
 
@@ -160,5 +162,5 @@ int main(int argc, char** argv) {
     for (int i=0; i<40; i++) {
         apply_rules(paircounts, insertion_rules);
     }
-    std::cout << "      Score: " << score_paircounts(polymer, paircounts) << std::endl;
+    std::cout << "      Score: " << score_paircounts(initial_polymer, paircounts) << std::endl;
 }
