@@ -40,7 +40,7 @@ std::string to_string(const std::map<ElemPair, Elem>& rules) {
     return ss.str();
 }
 
-void apply_rules_to_string(std::string& s, const std::map<ElemPair, Elem>& insertion_rules) {
+void apply_rules(std::string& s, const std::map<ElemPair, Elem>& insertion_rules) {
     Elem last = '@';
     std::string result;
 
@@ -76,7 +76,7 @@ std::string to_string(const ElemPairCounts& counts) {
 }
 
 
-void apply_rules_to_paircounts(ElemPairCounts& pc, const std::map<ElemPair, Elem>& insertion_rules) {
+void apply_rules(ElemPairCounts& pc, const std::map<ElemPair, Elem>& insertion_rules) {
     ElemPairCounts result;
 
     for (auto [key, value] : pc) {
@@ -94,7 +94,7 @@ void apply_rules_to_paircounts(ElemPairCounts& pc, const std::map<ElemPair, Elem
     pc = result;
 }
 
-long calculate_score(const std::map<Elem, long>& counts) {
+long score_from_element_counts(const std::map<Elem, long>& counts) {
     long max_count = LONG_MIN, min_count=LONG_MAX;
     for (auto [key, value] : counts) {
         if (value > max_count) {
@@ -112,7 +112,7 @@ long score_polymer(const std::string& polymer) {
     for (auto c: polymer) {
         counts[c]++;
     }
-    return calculate_score(counts);
+    return score_from_element_counts(counts);
 }
 
 long score_paircounts(const std::string& initial_polymer, const ElemPairCounts& paircounts) {
@@ -132,7 +132,7 @@ long score_paircounts(const std::string& initial_polymer, const ElemPairCounts& 
     counts[initial_polymer[0]]++;
     counts[initial_polymer[initial_polymer.length()-1]]++;
 
-    return calculate_score(counts);
+    return score_from_element_counts(counts);
 }
 
 int main(int argc, char** argv) {
@@ -149,15 +149,16 @@ int main(int argc, char** argv) {
     std::string polymer = initial_polymer;
     std::cout << "Part 1:" << std::endl;
     for (int i=0; i<10; i++) {
-        apply_rules_to_string(polymer, insertion_rules);
+        apply_rules(polymer, insertion_rules);
     }
     std::cout << "      Score: " << score_polymer(polymer) << std::endl;
 
     // Now, do it smarter for a larger number of iterations
+    // Rather than storing the polymer as a string, we'll store it as a set of counts of element pairs
     std::cout << "Part 2:" << std::endl;
     ElemPairCounts paircounts = string_to_paircounts(initial_polymer);
     for (int i=0; i<40; i++) {
-        apply_rules_to_paircounts(paircounts, insertion_rules);
+        apply_rules(paircounts, insertion_rules);
     }
     std::cout << "      Score: " << score_paircounts(polymer, paircounts) << std::endl;
 }
