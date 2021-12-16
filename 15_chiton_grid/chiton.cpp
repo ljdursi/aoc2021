@@ -70,16 +70,16 @@ std::vector<Coord> neighbours(Coord c, int n, int m) {
     return result;
 }
 
-Grid bigger_grid(const Grid& g) {
+Grid embiggen_grid(const Grid& g, const int factor) {
     const int n = g.size();
     const int m = g[0].size();
 
-    Grid result(5*n, std::vector<short int>(5*m, 0));
+    Grid result(factor*n, std::vector<short int>(factor*m, 0));
     for (int i=0; i<n; i++) {
         for (int j=0; j<m; j++) {
             int value = g[i][j];
-            for (int ishift=0; ishift<5; ishift++) {
-                for (int jshift=0; jshift<5; jshift++) {
+            for (int ishift=0; ishift<factor; ishift++) {
+                for (int jshift=0; jshift<factor; jshift++) {
                     result[i+n*ishift][j+m*jshift] = (value-1+ishift+jshift)%9+1;
                 }
             }
@@ -108,6 +108,9 @@ int find_min_path(const Grid& g, std::vector<Coord>& path) {
         std::sort(coords.begin(), coords.end(), cmp);
         const Coord c = coords.back(); coords.pop_back();
         const int x = c.first, y = c.second;
+        if (x == n-1 && y == m-1) {
+            break;
+        }
 
         for (const auto& [neigh_x, neigh_y]: neighbours(c, n, m)) {
             if (dequeued[neigh_x][neigh_y]) {
@@ -150,7 +153,7 @@ int main(int argc, char** argv) {
     std::cout << "      Min cost path = " << min_path << std::endl;
 
     std::cout << "Part 2:" << std::endl;
-    Grid big_grid = bigger_grid(grid);
+    Grid big_grid = embiggen_grid(grid, 5);
 
     path.clear();
     const int min_big_path = find_min_path(big_grid, path);
