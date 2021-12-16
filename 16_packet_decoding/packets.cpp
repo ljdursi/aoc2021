@@ -22,9 +22,6 @@ typedef struct bitstream_cursor {
     int char_idx;
     int bit_idx;
     bitstream_cursor(int char_idx=0, int bit_idx=bits_per_char-1) : char_idx(char_idx), bit_idx(bit_idx) {}
-    int distance(const bitstream_cursor& other) const {
-        return (char_idx - other.char_idx) * bits_per_char + (bit_idx - other.bit_idx);
-    }
 } bitstream_cursor_t;
 
 class Bitstream {
@@ -152,11 +149,11 @@ long int Packet::value() const {
         case MAXIMUM:
             return *std::max_element(sub_values.begin(), sub_values.end());
         case GREATER_THAN:
-            return (sub_values[0] > sub_values[1]) ? 1 : 0l;
+            return (sub_values[0] > sub_values[1]) ? 1l : 0l;
         case LESS_THAN:
-            return (sub_values[0] < sub_values[1]) ? 1 : 0l;
+            return (sub_values[0] < sub_values[1]) ? 1l : 0l;
         case EQUAL:
-            return (sub_values[0] == sub_values[1]) ? 1 : 0l;
+            return (sub_values[0] == sub_values[1]) ? 1l : 0l;
     }
 
     return 0l;
