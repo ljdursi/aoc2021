@@ -95,8 +95,8 @@ int find_min_path(const Grid& g, std::vector<Coord>& path) {
 
     std::vector<std::vector<Coord>> prev(n, std::vector<Coord>(m, Coord(-1,-1)));
     std::vector<std::vector<int>> dist(n, std::vector<int>(m, INT_MAX));
-    std::vector<std::vector<bool>> dequeued(n, std::vector<bool>(m,false));
     std::vector<std::vector<bool>> queued(n, std::vector<bool>(m,false));
+    std::vector<std::vector<bool>> dequeued(n, std::vector<bool>(m,false));
 
     auto cmp = [&dist](Coord left, Coord right) {return dist[left.first][left.second] > dist[right.first][right.second];};
     std::vector<Coord> coords;
@@ -106,23 +106,24 @@ int find_min_path(const Grid& g, std::vector<Coord>& path) {
 
     while (!coords.empty()) {
         std::sort(coords.begin(), coords.end(), cmp);
-        const Coord c = coords.back();
-        coords.pop_back();
+        const Coord c = coords.back(); coords.pop_back();
+        const int x = c.first, y = c.second;
 
-        for (auto neigh: neighbours(c, n, m)) {
-            if (dequeued[neigh.first][neigh.second]) {
+        for (const auto& [neigh_x, neigh_y]: neighbours(c, n, m)) {
+            if (dequeued[neigh_x][neigh_y]) {
                 continue;
             }
-            if (dist[neigh.first][neigh.second] > dist[c.first][c.second] + g[neigh.first][neigh.second]) {
-                dist[neigh.first][neigh.second] = dist[c.first][c.second] + g[neigh.first][neigh.second];
-                prev[neigh.first][neigh.second] = c;
-                if (!queued[neigh.first][neigh.second]) {
-                    coords.push_back(neigh);
-                    queued[neigh.first][neigh.second] = true;
+            auto proposed_dist = dist[x][y] + g[neigh_x][neigh_y];
+            if (proposed_dist < dist[neigh_x][neigh_y]) {
+                dist[neigh_x][neigh_y] = proposed_dist;
+                prev[neigh_x][neigh_y] = c;
+                if (!queued[neigh_x][neigh_y]) {
+                    coords.push_back(Coord(neigh_x, neigh_y));
+                    queued[neigh_x][neigh_y] = true;
                 }
             }
         }
-        dequeued[c.first][c.second] = true;
+        dequeued[x][y] = true;
     }
 
     // backtrack
