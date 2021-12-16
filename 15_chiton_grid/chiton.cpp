@@ -101,16 +101,18 @@ int find_min_path(const Grid& g, std::vector<Coord>& path) {
     auto cmp = [&dist](Coord left, Coord right) {return dist[left.first][left.second] > dist[right.first][right.second];};
     std::vector<Coord> coords;
 
-    dist[0][0] = 0;
-    coords.push_back(Coord(0,0));
+    const Coord start(0,0), end(n-1,m-1);
+    coords.push_back(start);
+    dist[start.first][start.second] = 0;
 
     while (!coords.empty()) {
         std::sort(coords.begin(), coords.end(), cmp);
         const Coord c = coords.back(); coords.pop_back();
-        const int x = c.first, y = c.second;
-        if (x == n-1 && y == m-1) {
+        if (c == end) {
             break;
         }
+
+        const int x = c.first, y = c.second;
 
         for (const auto& [neigh_x, neigh_y]: neighbours(c, n, m)) {
             if (dequeued[neigh_x][neigh_y]) {
@@ -130,8 +132,8 @@ int find_min_path(const Grid& g, std::vector<Coord>& path) {
     }
 
     // backtrack
-    path.push_back(Coord(n-1,m-1));
-    while (prev[path.back().first][path.back().second] != Coord(-1,-1)) {
+    path.push_back(end);
+    while (path.back() != start) {
         path.push_back(prev[path.back().first][path.back().second]);
     }
     return dist[n-1][m-1];
