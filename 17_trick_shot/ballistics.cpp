@@ -28,7 +28,7 @@ void x_velocity_range(const int x_min, const int x_max, int &vx_min, int &vx_max
     // go any faster than this, and we'll be past the target after the first second
     vx_max = x_max;
 
-    // go any slower than this, and you'll never get to the target
+    // go any slower than this, and we'll never get to the target
     int abs_posn = abs(x_min);
 
     int vx = 0;
@@ -95,24 +95,29 @@ std::vector<std::pair<int, int>> valid_vy0_t_pairs(const int y_min, const int y_
         for (const int t: possible_factors(2*yt)) {
             int vy0 = yt/t + (t-1)/2;
             if (ypos(vy0, t) == yt)
-                result.push_back(std::make_pair(vy0, t));
+                result.push_back({vy0, t});
         }
     }
     return result;
 }
 
-std::vector<std::tuple<int, int, int>> valid_solutions(const int x_min, const int x_max, const std::vector<std::pair<int, int>>& vy0_t_pairs) {
-    std::vector<std::tuple<int, int, int>> result;
-    int vx_min, vx_max;
+std::set<std::pair<int, int>> valid_initial_conditions(const int x_min, const int x_max, const int y_min, const int y_max) {
+    // solve for y part of the equation of motion first
+    auto vy0_t_pairs = valid_vy0_t_pairs(y_min, y_max);
 
+    // now we'll see if there are any valid x initial conditions
+    int vx_min, vx_max;
     x_velocity_range(x_min, x_max, vx_min, vx_max);
+
+    std::set<std::pair<int, int>> result;
     for (int vx0 = vx_min; vx0 <= vx_max; vx0++) {
         for (const auto& vy0_t: vy0_t_pairs) {
             int vy0 = vy0_t.first, t = vy0_t.second;
-            int x = xpos(vx0, t);
 
+            // for the trial vx0, does x(vx0, t) fall within the target area?
+            int x = xpos(vx0, t);
             if (x >= x_min && x <= x_max)
-                result.push_back(std::make_tuple(vx0, vy0, t));
+                result.insert({vx0, vy0});
         }
     }
 
@@ -129,17 +134,12 @@ int main(int argc, char** argv) {
     int xmin, xmax, ymin, ymax;
 
     get_inputs(input, xmin, xmax, ymin, ymax);
-    auto vy0_t_pairs = valid_vy0_t_pairs(ymin, ymax);
-    auto solutions = valid_solutions(xmin, xmax, vy0_t_pairs);
+    auto solutions = valid_initial_conditions(xmin, xmax, ymin, ymax);
 
     int max_ypos = 0;
-    std::set<std::pair<int, int>> initial_velocities;
     for (const auto& soln: solutions) {
-        int vx0 = std::get<0>(soln);
-        int vy0 = std::get<1>(soln);
-        initial_velocities.insert(std::make_pair(vx0,vy0));
-
-        if (vy0 < 0)
+        int vy0 = soln.second; 
+        if (vy0 <= 0) // max_ypos = 0;
             continue;
 
         // the peak position is where vy = 0, and since vy = vy0 - t
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
     std::cout << "     max_ypos = " << max_ypos << std::endl;
 
     std::cout << "Part 2:" << std::endl;
-    std::cout << "     number of valid initial velocities = " << initial_velocities.size() << std::endl;
+    std::cout << "     number of valid initial velocities = " << solutions.size() << std::endl;
 
     return 0;
 }
