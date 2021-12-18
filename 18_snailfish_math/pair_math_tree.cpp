@@ -2,18 +2,24 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <regex>
 
 class SFNumber {
     public:
-        SFNumber(const int n) : is_literal(true), literal(n) {}
-        SFNumber(const int left, const int right) : is_literal(false), left(new SFNumber(left)), right(new SFNumber(right)) {}
-        SFNumber(const std::vector<std::string>& tokens);
-        SFNumber(const std::string s);
-        SFNumber(SFNumber* a, SFNumber *b);
-        SFNumber add(SFNumber* b);
+        SFNumber(const std::vector<std::string>& tokens, SFNumber *parent=nullptr, const bool left=false);
+        SFNumber(const int n, SFNumber *parent=nullptr) : is_literal(true), literal(n), parent(parent) { if (parent != nullptr) level = parent->level += 1; else level = 0;};
+        SFNumber(SFNumber& a, SFNumber &b, SFNumber *parent=nullptr);
+
+        SFNumber(const SFNumber& other);
+        SFNumber(SFNumber&& other);
+        SFNumber& operator=(const SFNumber& other);
+
+        void add(const SFNumber& b);
+
         void reduce();
         std::string to_string() const;
+        std::string print_as_tree(const std::string& prefix="") const;
         long int magnitude() const {
             if (is_literal)
                 return literal;
@@ -34,42 +40,40 @@ class SFNumber {
                 return false;
             }
         }
+        static std::vector<std::string> tokenize(const std::string& s);
         bool explode();
         ~SFNumber();
-        SFNumber(std::vector<std::smatch>& smatches);
         static const int MAX_LEVEL = 4;
         static const int MAX_LITERAL = 9;
 
     private:
         SFNumber *predecessor();
         SFNumber *successor();
-        void increment_depth() { level++; for (auto child: {left, right}) child->increment_depth(); }
+        void increment_depth() { level++; for (auto child: {left, right}) if (child) child->increment_depth(); }
         SFNumber *find_exploder();
         SFNumber *find_splitter();
+        static int find_divider(const std::vector<std::string>& tokens);
 
+        bool is_left_child = false;
+        bool is_right_child = false;
         bool is_literal;
         short int literal;
         short int level;
         SFNumber *left = nullptr;
         SFNumber *right = nullptr;
         SFNumber *parent = nullptr;
-        bool is_left_child = false;
-        bool is_right_child = false;
 };
 
 SFNumber::~SFNumber() {
-    if (left != nullptr)
-        delete left;
-    if (right != nullptr)
-        delete right;    
+    delete left;
+    delete right;
 };
 
 SFNumber *SFNumber::predecessor() {
-    if (parent == nullptr )
+    if (parent == nullptr)
         return nullptr;
 
     // walk up the tree until we can go left
-    // then walk back down the tree to the rightmost non-literal child of that left subtree
     SFNumber *p = this;
     while (p != nullptr && p->is_left_child) {
         p = p->parent;
@@ -77,19 +81,22 @@ SFNumber *SFNumber::predecessor() {
     if (p == nullptr)
         return nullptr;
 
+    if (p->parent == nullptr)
+        return nullptr;
+    
+    // then walk back down the tree to the rightmost (literal) child of that left subtree
     p = p->parent->left;
-    while ((p != nullptr) && !(p->right->is_literal)) {
+    while ((p != nullptr) && (p->right != nullptr)) {
         p = p->right;
     }
     return p;
 }
 
 SFNumber *SFNumber::successor() {
-    if (parent == nullptr )
+    if (parent == nullptr)
         return nullptr;
 
     // walk up the tree until we can go right
-    // then walk back down the tree to the leftmost non-literal child of that right subtree
     SFNumber *p = this;
     while (p != nullptr && p->is_right_child) {
         p = p->parent;
@@ -97,8 +104,12 @@ SFNumber *SFNumber::successor() {
     if (p == nullptr)
         return nullptr;
 
+    if (p->parent == nullptr)
+        return nullptr;
+
+    // then walk back down the tree to the leftmost (literal) child of that right subtree
     p = p->parent->right;
-    while (p->left->is_literal) {
+    while ((p != nullptr) && (p->left != nullptr)) {
         p = p->left;
     }
     return p;
@@ -132,18 +143,21 @@ bool SFNumber::explode() {
 
     auto lneigh = predecessor();
     if (lneigh != nullptr) {
-        lneigh->right->literal += left->literal;
+        lneigh->literal += left->literal;
     }
-    delete left;
 
     auto rneigh = successor();
     if (rneigh != nullptr) {
-        rneigh->left->literal += right->literal;
+        rneigh->literal += right->literal;
     }
+
+    delete left;
     delete right;
 
     is_literal = true;
     literal = 0;
+    left = nullptr;
+    right = nullptr;
 
     return true;
 }
@@ -190,6 +204,7 @@ void SFNumber::reduce() {
         if (exploder != nullptr) {
             exploder->explode();
             changed = true;
+            continue;
         }
         SFNumber* splitter = find_splitter();
         if (splitter != nullptr) {
@@ -199,28 +214,185 @@ void SFNumber::reduce() {
     } while (changed);
 }
 
-SFNumber::SFNumber(const std::vector<std::string>& tokens) {
+int SFNumber::find_divider(const std::vector<std::string>& tokens) {
+    int level = 0, divider=-1;
+    for (int i=0; i<tokens.size(); i++) {
+        if (tokens[i] == "[") {
+            level++;
+        } else if (tokens[i] == "]") {
+            level--;
+        } else if (tokens[i] == "," && level == 1) {
+            divider = i;
+            break;
+        }
+    }
+    return divider;
+}
+
+SFNumber::SFNumber(const std::vector<std::string>& tokens, SFNumber *parent, const bool left_child) : parent(parent) {
+    if (parent != nullptr) {
+        level = parent->level + 1;
+        is_left_child = left_child;
+        is_right_child = !left_child;
+    } else {
+        level = 1;
+        is_left_child = false;
+        is_right_child = false;
+    }
+
     if (tokens.size() == 1) {
         is_literal = true;
         literal = std::stoi(tokens[0]);
     } else {
         is_literal = false;
-        left = new SFNumber(tokens[0]);
-        right = new SFNumber(tokens[1]);
-        for (SFNumber *child : {left, right}) {
-            child->level = level+1;
-            child->parent = this;
-        }
+        int divider = find_divider(tokens);
+        
+        std::vector<std::string> left_tokens(tokens.begin()+1, tokens.begin()+divider);
+        std::vector<std::string> right_tokens(tokens.begin()+(divider+1), tokens.end()-1);
+        left = new SFNumber(left_tokens, this, true);
+        right = new SFNumber(right_tokens, this, false);
     }
 }
 
-int main() {
+std::vector<std::string> SFNumber::tokenize(const std::string& s) {
+    std::vector<std::string> tokens;
+    std::regex tokens_re("(\\[|\\d+|,|\\])");
 
-    std::string s = "[[1,2],[3,4]]";
-    std::regex tokens_re("(\[|\\d+|,|\])");
-    std::smatch smatches;
-    std::regex_match(s, smatches, tokens_re);
-    auto n = SFNumber(smatches);
+    auto tokens_begin = std::sregex_iterator(s.begin(), s.end(), tokens_re);
+    auto tokens_end = std::sregex_iterator();
 
-    std::cout << n.to_string() << std::endl;
+    for (auto it = tokens_begin; it != tokens_end; ++it) {
+        std::smatch match = *it;
+        std::string token = match.str();
+        tokens.push_back(token);
+    }    
+
+    return tokens;
+}
+
+SFNumber::SFNumber(SFNumber&& other) : is_left_child(other.is_left_child), is_right_child(other.is_right_child),
+                                       is_literal(other.is_literal), literal(other.literal), level(other.level),
+                                       left(other.left), right(other.right), parent(other.parent) {
+    other.left = nullptr;
+    other.right = nullptr;
+    other.is_literal = true;
+    other.parent = nullptr;
+}
+
+SFNumber::SFNumber(const SFNumber& other) : is_left_child(other.is_left_child), is_right_child(other.is_right_child),
+                                            is_literal(other.is_literal), literal(other.literal), level(other.level),
+                                            parent(other.parent) {
+    if (!is_literal) {
+        left = new SFNumber(*other.left);
+        left -> parent = this;
+        right = new SFNumber(*other.right);
+        right -> parent = this;
+    } else {
+        left = nullptr;
+        right = nullptr;
+    }
+}
+
+SFNumber& SFNumber::operator=(const SFNumber& other) {
+    is_left_child = other.is_left_child;
+    is_right_child = other.is_left_child;
+    parent = other.parent;
+    level = other.level;
+
+    SFNumber *orig_left = left;
+    SFNumber *orig_right = right;
+
+    left = new SFNumber(*other.left);
+    right = new SFNumber(*other.right);
+
+    delete orig_left;
+    delete orig_right;
+    return *this;
+}
+
+void SFNumber::add(const SFNumber& b) {
+    SFNumber *new_left = new SFNumber(*this);
+
+    SFNumber *orig_left = left;
+    SFNumber *orig_right = right;
+
+    left = new_left;
+    left->increment_depth();
+    left->parent = this;
+    left->is_left_child = true;
+
+    right = new SFNumber(b);
+    right->increment_depth();
+    right->parent = this;
+    right->is_right_child = true;
+
+    is_literal = false;
+    literal = 0;
+
+    delete orig_left;
+    delete orig_right;
+}
+
+std::string SFNumber::print_as_tree(const std::string& prefix) const {
+    std::stringstream ss;
+    std::string child_type = is_left_child ? "left_child" : (is_right_child ? "right_child" : "unknown_child");
+    bool parent_confirmed = false;
+    if (parent != nullptr) {
+        if (is_left_child && parent->left == this)
+            parent_confirmed = true;
+        if (is_right_child && parent->right == this)
+            parent_confirmed = true;
+    }
+    std::string parent_confirmed_str = "no parent";
+    if (parent != nullptr)
+        parent_confirmed_str = parent_confirmed ? "confirmed" : "WRONG!!";
+    if (is_literal) {
+        ss << prefix << std::to_string(literal) << "  " << child_type << "  parent: " << parent << "  " << parent_confirmed_str << std::endl;
+    } else {
+        ss << prefix << this << " " << child_type << "  parent: " << parent << "  " << parent_confirmed_str << std::endl;
+        ss << prefix << "Left child: " << left << std::endl;
+        ss << left->print_as_tree(prefix+"  ");
+        ss << prefix << "Right child: " << right << std::endl;
+        ss << right->print_as_tree(prefix+"  ");
+    }
+    return ss.str();
+}
+
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
+        return 1;
+    }
+
+    std::ifstream input(argv[1]);
+    std::string line;
+    std::vector<SFNumber> numbers;
+    while (std::getline(input, line)) {
+        auto number = SFNumber(SFNumber::tokenize(line));
+        numbers.push_back(number);
+    }
+
+    SFNumber result = numbers[0];
+    for (int i=1; i<numbers.size(); i++) {
+        result.add(numbers[i]);
+        result.reduce();
+    }
+
+    std::cout << "Part 1: " << std::endl;
+    std::cout << "    after addition: " << result.to_string() << std::endl;
+    std::cout << "    magnitude     : " << result.magnitude() << std::endl;
+
+    // std::cout << "Part 2: " << std::endl;
+    // long int max_mag = LONG_MIN;
+    // for (auto& n1: numbers) {
+    //     for (auto& n2: numbers) {
+    //         SFNumber n3 = n1;
+    //         n3.add(n2);
+    //         n3.reduce();
+    //         if (n3.magnitude() > max_mag) {
+    //             max_mag = n3.magnitude();
+    //         }
+    //     }
+    // }
+    // std::cout << "    max magnitude : " << max_mag << std::endl;
 }
