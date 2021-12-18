@@ -382,17 +382,17 @@ int main(int argc, char **argv) {
     std::cout << "    after addition: " << result.to_string() << std::endl;
     std::cout << "    magnitude     : " << result.magnitude() << std::endl;
 
-    // std::cout << "Part 2: " << std::endl;
-    // long int max_mag = LONG_MIN;
-    // for (auto& n1: numbers) {
-    //     for (auto& n2: numbers) {
-    //         SFNumber n3 = n1;
-    //         n3.add(n2);
-    //         n3.reduce();
-    //         if (n3.magnitude() > max_mag) {
-    //             max_mag = n3.magnitude();
-    //         }
-    //     }
-    // }
-    // std::cout << "    max magnitude : " << max_mag << std::endl;
+    std::cout << "Part 2: " << std::endl;
+    long int max_mag = LONG_MIN;
+    for (auto& n1: numbers) {
+        for (auto& n2: numbers) {
+            SFNumber n3 = n1;
+            n3.add(n2);
+            n3.reduce();
+            if (n3.magnitude() > max_mag) {
+                max_mag = n3.magnitude();
+            }
+        }
+    }
+    std::cout << "    max magnitude : " << max_mag << std::endl;
 }
