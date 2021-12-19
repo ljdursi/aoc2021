@@ -9,8 +9,12 @@
 class SFNumber {
     public:
         SFNumber(std::string input) : s(input) {};
-        void add(const SFNumber& b) {
+        SFNumber &operator+=(const SFNumber& b) {
             s = '[' + s + ',' + b.s + ']';
+            return *this;
+        }
+        SFNumber operator+(const SFNumber& b) {
+            return SFNumber('[' + s + ',' + b.s + ']');
         }
         void reduce();
         std::string to_string() const {
@@ -205,7 +209,7 @@ int main(int argc, char **argv) {
 
     SFNumber result = numbers[0];
     for (int i=1; i<numbers.size(); i++) {
-        result.add(numbers[i]);
+        result += numbers[i];
         result.reduce();
     }
 
@@ -215,10 +219,9 @@ int main(int argc, char **argv) {
 
     std::cout << "Part 2: " << std::endl;
     long int max_mag = LONG_MIN;
-    for (const auto& n1: numbers) {
+    for (auto& n1: numbers) {
         for (const auto& n2: numbers) {
-            SFNumber n3 = n1;
-            n3.add(n2);
+            SFNumber n3 = n1 + n2;
             n3.reduce();
             if (n3.magnitude() > max_mag) {
                 max_mag = n3.magnitude();
