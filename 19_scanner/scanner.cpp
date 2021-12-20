@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
             auto dist = offset1 - offset2;
             int dist_mag = 0;
             for (int i=0; i<3; i++) 
-                dist_mag += abs(dist.x[i]);
+                dist_mag += abs(dist[i]);
 
             if (dist_mag > max_dist)
                 max_dist = dist_mag;
