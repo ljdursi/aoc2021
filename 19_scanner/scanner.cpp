@@ -37,12 +37,12 @@ struct Coordinate {
 };
 
 template <size_t N>
-struct CoordinateList {
+struct CoordinateSet {
     std::set<Coordinate<N>> x;
     size_t size() const { return x.size(); };
     size_t dims() const { return N; };
-    CoordinateList() { x.clear(); };
-    CoordinateList(const std::vector<std::array<int, N>>& coords) {
+    CoordinateSet() { x.clear(); };
+    CoordinateSet(const std::vector<std::array<int, N>>& coords) {
         for (const auto& coord : coords) 
             x.insert(Coordinate<N>(coord));
     }
@@ -53,7 +53,7 @@ struct CoordinateList {
     bool has(const Coordinate<N>& c) const {
         return x.find(c) != x.end();
     }
-    CoordinateList<N>& operator+=(const CoordinateList<N>& other) {
+    CoordinateSet<N>& operator+=(const CoordinateSet<N>& other) {
         for (const auto& coord : other.x) {
             add(coord);
         }
@@ -165,8 +165,8 @@ struct CoordinateTransformation {
 };
 
 template<size_t N>
-CoordinateList<N> applyTransformation(const CoordinateList<N>& x, const CoordinateTransformation<N>& trans) {
-    CoordinateList<N> result;
+CoordinateSet<N> applyTransformation(const CoordinateSet<N>& x, const CoordinateTransformation<N>& trans) {
+    CoordinateSet<N> result;
 
     for (auto oldcoord: x.x) {
         Coordinate<N> newx(0);
@@ -185,7 +185,7 @@ CoordinateList<N> applyTransformation(const CoordinateList<N>& x, const Coordina
 // Just brute-force it.  Absolutely awful.
 //
 template<size_t N>
-int find_best_overlap(const CoordinateList<N>& c1, const CoordinateList<N>& c2, std::array<int, N>& best_offset) {
+int find_best_overlap(const CoordinateSet<N>& c1, const CoordinateSet<N>& c2, std::array<int, N>& best_offset) {
     std::map<std::array<int, N>, int> offset_to_count;
     for (auto x1: c1.x) {
         for (auto x2: c2.x) {
@@ -206,7 +206,7 @@ int find_best_overlap(const CoordinateList<N>& c1, const CoordinateList<N>& c2, 
 }
 
 template<size_t N>
-int find_best_transformation(const CoordinateList<N>& c1, const CoordinateList<N>& orig_c2, CoordinateTransformation<N>& best_transformation) {
+int find_best_transformation(const CoordinateSet<N>& c1, const CoordinateSet<N>& orig_c2, CoordinateTransformation<N>& best_transformation) {
 
     int best_overlap = 0;
     std::array<int, N> best_offset;
@@ -215,7 +215,7 @@ int find_best_transformation(const CoordinateList<N>& c1, const CoordinateList<N
     const std::vector<CoordinateOrientation<N>> orientations = all_orientations(best_offset);
 
     for (const CoordinateOrientation<N>& orientation : orientations) {
-        CoordinateList<N> c2 = applyTransformation<N>(orig_c2, CoordinateTransformation<N>(orientation));
+        CoordinateSet<N> c2 = applyTransformation<N>(orig_c2, CoordinateTransformation<N>(orientation));
         std::array<int, N> offset;
 
         int overlap = find_best_overlap(c1, c2, offset);
@@ -230,8 +230,8 @@ int find_best_transformation(const CoordinateList<N>& c1, const CoordinateList<N
     return best_overlap;
 }
 
-std::vector<CoordinateList<3>> get_inputs(std::ifstream& input) {
-    std::vector<CoordinateList<3>> result;
+std::vector<CoordinateSet<3>> get_inputs(std::ifstream& input) {
+    std::vector<CoordinateSet<3>> result;
 
     const std::regex delim_re("--- scanner (\\d+) ---");
     const std::regex coords_re("([-]?\\d+),([-]?\\d+),([-]?\\d+)");
@@ -239,7 +239,7 @@ std::vector<CoordinateList<3>> get_inputs(std::ifstream& input) {
     bool first = true;
 
     std::string line;
-    CoordinateList<3> x;
+    CoordinateSet<3> x;
 
     while (std::getline(input, line)) {
         if (line.empty()) continue;
@@ -250,7 +250,7 @@ std::vector<CoordinateList<3>> get_inputs(std::ifstream& input) {
                 continue;
             } 
             result.push_back(x);
-            x = CoordinateList<3>();
+            x = CoordinateSet<3>();
             continue;
         }
 
@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
     std::ifstream input(argv[1]);
     auto scanners = get_inputs(input);
 
-    CoordinateList<3> transformed = scanners[0];
+    CoordinateSet<3> transformed = scanners[0];
     scanners.erase(scanners.begin());
 
     std::vector<CoordinateTransformation<3>> transformations;
