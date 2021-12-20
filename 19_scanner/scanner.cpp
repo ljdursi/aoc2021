@@ -212,7 +212,7 @@ int find_best_transformation(const CoordinateList<N>& c1, const CoordinateList<N
     std::array<int, N> best_offset;
     CoordinateOrientation<N> best_orientation;
 
-    std::vector<CoordinateOrientation<N>> orientations = all_orientations(best_offset);
+    const std::vector<CoordinateOrientation<N>> orientations = all_orientations(best_offset);
 
     for (const CoordinateOrientation<N>& orientation : orientations) {
         CoordinateList<N> c2 = applyTransformation<N>(orig_c2, CoordinateTransformation<N>(orientation));
