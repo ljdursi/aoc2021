@@ -216,8 +216,8 @@ int find_best_transformation(const CoordinateSet<N>& c1, const CoordinateSet<N>&
 
     for (const CoordinateOrientation<N>& orientation : orientations) {
         CoordinateSet<N> c2 = applyTransformation<N>(orig_c2, CoordinateTransformation<N>(orientation));
-        std::array<int, N> offset;
 
+        std::array<int, N> offset;
         int overlap = find_best_overlap(c1, c2, offset);
         if (overlap > best_overlap) {
             best_overlap = overlap;
@@ -289,12 +289,12 @@ int main(int argc, char **argv) {
                 to_erase.push_back(i);
                 scanners[i] = applyTransformation(scanners[i], trans);
                 transformations.push_back(trans);
+                transformed += scanners[i];
             }
         }
 
         std::reverse(to_erase.begin(), to_erase.end());
         for (int i: to_erase) {
-            transformed += scanners[i];
             scanners.erase(scanners.begin() + i);
         }
     }
