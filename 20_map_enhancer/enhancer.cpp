@@ -15,101 +15,99 @@ Enhancer create_enhancer(const std::string& str) {
 }
 
 typedef std::pair<int, int> Position;
-typedef std::set<Position> Map;
 
-Map create_map(const std::vector<std::string>& str) {
-    const int n = str.size();
-    const int m = str[0].size();
-    Map map;
+class Map {
+    public:
+        Map() : map({}) {}
+        Map(const std::vector<std::string>& str) {
+            const int n = str.size();
+            const int m = str[0].size();
 
-    for (int x=0; x<m; ++x) {
-        for (int y=0; y<n; ++y) {
-            if (str[y][x] == '#') {
-                map.insert(Position(x,y));
+            for (int x=0; x<m; ++x) {
+                for (int y=0; y<n; ++y) {
+                    if (str[y][x] == '#') {
+                        map.insert(Position(x,y));
+                    }
+                }
+            }
+
+            maxx = m-1;
+            maxy = n-1;
+            border_value = false;
+        }
+
+        bool in_map(const Position& pos) const {
+            if (within_border(pos)) {
+                return map.find(pos) != map.end();
+            } else {
+                return border_value;
             }
         }
-    }
 
-    return map;
-}
+        unsigned int pixel_region_value(const Position& p) const {
+            unsigned int value = 0;
+            for (int j=-1; j<=1; ++j) {
+                for (int i=-1; i<=1; ++i) {
+                    value <<= 1;
 
-bool in_map(const Map& map, const Position& p) {
-    return map.find(p) != map.end();
-}
-
-std::pair<Position, Position> map_range(const Map& map) {
-    Position min_p(INT_MAX, INT_MAX);
-    Position max_p(INT_MIN, INT_MIN);
-
-    for (const auto& [x,y] : map) {
-        if (x < min_p.first) {
-            min_p.first = x;
-        }
-        if (y < min_p.second) {
-            min_p.second = y;
-        }
-        if (x > max_p.first) {
-            max_p.first = x;
-        }
-        if (y > max_p.second) {
-            max_p.second = y;
-        }
-    }
-
-    return std::make_pair(min_p, max_p);
-}
-
-unsigned int pixel_region_value(const Map& map, const Position& p) {
-    unsigned int value = 0;
-    for (int j=-1; j<=1; ++j) {
-        for (int i=-1; i<=1; ++i) {
-            value <<= 1;
-
-            Position q(p.first + i, p.second + j);
-            value += in_map(map, q) ? 1 : 0;
-        }
-    }
-    return value;
-}
-
-Map evolve_map(const Map& map, const Enhancer& enhancer) {
-    auto [min_p, max_p] = map_range(map);
-    Map new_map;
-
-    for (int x=min_p.first-2; x<=max_p.first+2; ++x) {
-        for (int y=min_p.second-2; y<=max_p.second+2; ++y) {
-
-            Position p(x, y);
-            unsigned int value = pixel_region_value(map, p);
-            bool pixel = enhancer[value];
-
-            if (pixel) {
-                new_map.insert(p);
+                    Position q(p.first + i, p.second + j);
+                    value += in_map(q) ? 1 : 0;
+                }
             }
+            return value;
         }
-    }
 
-    return new_map;
-}
+        void evolve(const Enhancer &enhancer) {
+            std::set<Position> pixels_to_examine;
+            std::set<Position> new_map;
 
-std::string map_to_string(const Map& map) {
-    auto [min_p, max_p] = map_range(map);
-    std::string str;
+            for (int x = minx-1; x <= maxx+1; x++) {
+                for (int y = miny-1; y <= maxy+1; y++) {
+                    Position p(x,y);
 
-    for (int y=min_p.second-1; y<=max_p.second+1; ++y) {
-        for (int x=min_p.first-1; x<=max_p.first+1; ++x) {
-            Position p(x, y);
-            str += in_map(map, p) ? '#' : '.';
+                    unsigned int value = pixel_region_value(p);
+                    bool pixel = enhancer[value];
+                    if (pixel)
+                        new_map.insert(p);
+                }
+            }
+
+            map = new_map;
+
+            // expand the grid
+            minx--; miny--;
+            maxx++; maxy++;
+
+            border_value = (border_value == false ? enhancer[0] : enhancer[511]);
+        } 
+
+        std::string to_string() const {
+            std::string str;
+            for (int y=miny-2; y<=maxy+2; y++) {
+                for (int x=minx-2; x<=maxx+2; x++) {
+                    Position p(x, y);
+                    str += in_map(p) ? '#' : '.';
+                }
+                str += '\n';
+            }
+            return str;
         }
-        str += '\n';
-    }
 
-    return str;
-}
+        int size() const {
+            return map.size();
+        }
 
-int pixel_count(const Map& map) {
-    return map.size();
-}
+    private:
+        std::set<Position> map;
+        int minx = 0, miny = 0;
+        int maxx, maxy;
+        bool border_value = false;
+
+        bool within_border(const Position& pos) const {
+            return pos.first >= minx && pos.first <= maxx && pos.second >= miny && pos.second <= maxy;
+        }
+};
+
 
 void get_inputs(std::ifstream& input, Enhancer &e, Map &m) {
     std::string line;
@@ -123,7 +121,7 @@ void get_inputs(std::ifstream& input, Enhancer &e, Map &m) {
         str.push_back(line);
     }
 
-    m = create_map(str);
+    m = Map(str);
 }
 
 int main(int argc, char** argv) {
@@ -138,16 +136,22 @@ int main(int argc, char** argv) {
     std::ifstream input(argv[1]);
     get_inputs(input, e, m);
 
-    std::cout << map_to_string(m) << std::endl;
-    std::cout << std::endl;
+    std::cout << m.size() << std::endl;
+    std::cout << m.to_string() << std::endl;
 
-    m = evolve_map(m, e);
-    std::cout << map_to_string(m) << std::endl;
-    std::cout << std::endl;
+    m.evolve(e);
+    std::cout << m.to_string();
 
-    m = evolve_map(m, e);
-    std::cout << map_to_string(m) << std::endl;
+    m.evolve(e);
+    std::cout << m.to_string();
 
     std::cout << "Part 1: " << std::endl;
-    std::cout << "      : " << pixel_count(m) << std::endl;
+    std::cout << "      : " << m.size() << std::endl;
+
+    for (int i=2; i<50; i++) {
+        m.evolve(e);
+    }
+
+    std::cout << "Part 2: " << std::endl;
+    std::cout << "      : " << m.size() << std::endl;
 }   
