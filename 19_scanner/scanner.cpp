@@ -297,9 +297,8 @@ int main(int argc, char **argv) {
             int number_aligned = find_best_transformation(transformed, scanners[i], trans);
             if (number_aligned >= 12) {
                 to_erase.push_back(i);
-                scanners[i] = applyTransformation(scanners[i], trans);
+                transformed += applyTransformation(scanners[i], trans);
                 transformations.push_back(trans);
-                transformed += scanners[i];
             }
         }
 
