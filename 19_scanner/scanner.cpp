@@ -286,32 +286,33 @@ int main(int argc, char **argv) {
     std::ifstream input(argv[1]);
     auto scanners = get_inputs(input);
 
-    CoordinateSet<3> transformed = scanners[0];
-    scanners.erase(scanners.begin());
-
     std::vector<CoordinateTransformation<3>> transformations;
-    while (!scanners.empty()) {
-        std::vector<int> to_erase;
+    transformations.push_back(CoordinateTransformation<3>());
+    std::vector<bool> done(scanners.size(), false);
+    int ndone = 0;
+
+    CoordinateSet<3> transformed = scanners[0];
+    done[0] = true;
+    ndone++;
+
+    while (ndone < scanners.size()) {
         for (int i=0; i<scanners.size(); i++) {
+            if (done[i]) continue;
+
             CoordinateTransformation<3> trans;
             int number_aligned = find_best_transformation(transformed, scanners[i], trans);
             if (number_aligned >= 12) {
-                to_erase.push_back(i);
                 transformed += applyTransformation(scanners[i], trans);
                 transformations.push_back(trans);
+                done[i] = true;
+                ndone++;
             }
-        }
-
-        std::reverse(to_erase.begin(), to_erase.end());
-        for (int i: to_erase) {
-            scanners.erase(scanners.begin() + i);
         }
     }
 
     std::cout << "Part 1:" << std::endl;
     std::cout << "      " << transformed.size() << std::endl;
 
-    transformations.push_back(CoordinateTransformation<3>());
     int max_dist = 0;
     for (auto trans1: transformations) {
         auto offset1 = Coordinate<3>(trans1.shift);
