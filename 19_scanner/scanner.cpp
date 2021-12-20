@@ -34,6 +34,17 @@ struct Coordinate {
         return false;
     }
     std::string to_string() const { std::string s; for (int i=0; i<N-1; i++) s += std::to_string(x[i]) + ", "; s += std::to_string(x[N-1]); return s; }
+    int lnorm(const int l) {
+        int m = 0;
+        for (int i=0; i<N; i++) {
+            int mi = 1;
+            for (int j=0; j<l; j++) {
+                mi *= abs(x[i]);
+            }
+            m += mi;
+        }
+        return m;
+    }
 };
 
 template <size_t N>
@@ -309,9 +320,7 @@ int main(int argc, char **argv) {
             auto offset2 = Coordinate<3>(trans2.shift);
 
             auto dist = offset1 - offset2;
-            int dist_mag = 0;
-            for (int i=0; i<3; i++) 
-                dist_mag += abs(dist[i]);
+            int dist_mag = dist.lnorm(1);
 
             if (dist_mag > max_dist)
                 max_dist = dist_mag;
