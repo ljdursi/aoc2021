@@ -207,7 +207,6 @@ int find_best_overlap(const CoordinateSet<N>& c1, const CoordinateSet<N>& c2, st
 
 template<size_t N>
 int find_best_transformation(const CoordinateSet<N>& c1, const CoordinateSet<N>& orig_c2, CoordinateTransformation<N>& best_transformation) {
-
     int best_overlap = 0;
     std::array<int, N> best_offset;
     CoordinateOrientation<N> best_orientation;
@@ -320,5 +319,4 @@ int main(int argc, char **argv) {
     }
     std::cout << "Part 2:" << std::endl;
     std::cout << "      " << max_dist << std::endl;
-
 }
