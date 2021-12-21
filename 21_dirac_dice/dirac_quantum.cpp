@@ -26,13 +26,6 @@ struct UniverseState {
         }
         return false;
     }
-    UniverseState& operator=(const UniverseState& other) {
-        for (int i=0; i<nplayers; i++) {
-            positions[i] = other.positions[i];
-            scores[i] = other.scores[i];
-        }
-        return *this;
-    }
 };
 
 class MultiverseSimulator {
