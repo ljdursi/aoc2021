@@ -8,11 +8,10 @@
 class Die {
     public:
         Die(int sides) : sides(sides), nrolls(0) {};
-        virtual int roll() = 0;
+        virtual int roll() { nrolls++; return rand() % sides + 1; };
         virtual int num_rolls() const { return nrolls; }
         int num_sides() const { return sides; }
     protected:
-        void increment_roll() { nrolls++; }
         int sides;
         int nrolls;
 };
@@ -21,7 +20,7 @@ class DeterministicDie : public Die {
     public:
         DeterministicDie(int sides, int value) : Die(sides), value(value) {}
         int roll() override {
-            Die::increment_roll();
+            Die::roll();
             int result = value;
             value = (value % sides) + 1;
             return result;
