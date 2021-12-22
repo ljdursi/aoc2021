@@ -9,12 +9,7 @@ struct Range {
     int start;
     int end;
     Range() : start(0), end(0) {}
-    Range(int x1, int x2) {
-        start = x1; end = x2;
-    }
-    bool contains(int x) const {
-        return (start >= end) && (x >= start && x <= end);
-    };
+    Range(const int x1, const int x2) : start(x1), end(x2) {}
     bool empty() const {
         return start > end;
     }
@@ -70,15 +65,6 @@ class Block {
             for (int i=0; i<3; i++) {
                 coords[i] = Range(0, -1);
             }
-        }
-        bool operator<(const Block& other) const {
-            for (int dim=0; dim<3; dim++) {
-                if (coords[dim] < other.coords[dim])
-                    return true;
-                if (other.coords[dim] < coords[dim])
-                    return false;
-            }
-            return false;
         }
         bool operator==(const Block& other) const {
             for (int dim=0; dim<3; dim++)
@@ -161,6 +147,7 @@ class Block {
 
             return result;
         }
+
     private:
         Range coords[3];
         bool state;
