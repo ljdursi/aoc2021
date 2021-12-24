@@ -27,12 +27,7 @@ struct Location {
     short int index;
     short int spot=0;
     bool operator<(const Location& other) const;
-    bool operator==(const Location& other) const;
 };
-
-bool Location::operator==(const Location& other) const {
-    return type==other.type && index==other.index && spot==other.spot;
-}
 
 bool Location::operator<(const Location& other) const {
     if (type != other.type)
@@ -42,6 +37,18 @@ bool Location::operator<(const Location& other) const {
         return (spot < other.spot);
     else
         return index < other.index;
+}
+
+struct Transition {
+    Location from, to;
+    AmphipodType amph_type;
+};
+
+std::string transition_to_string(const Transition& t) {
+    auto type_str = [](const LocationType type) { return (type == LocationType::HALLWAY) ? std::string("HALLWAY") : std::string("ROOM"); };
+    auto loc_str = [](const Location loc) { return std::to_string(loc.index) + (loc.type == LocationType::ROOM ? "," + std::to_string(loc.spot) : ""); };
+
+    return "( " + type_str(t.from.type) + " " + loc_str(t.from) + ") -> (" + type_str(t.to.type) + " " + loc_str(t.to) + " )";
 }
 
 typedef std::map<Location, AmphipodType> AmphipodConfiguration;
@@ -120,47 +127,47 @@ bool top_of_room(const AmphipodConfiguration& config, const Location& location) 
         return true;
 
     // Am I blocked in?
-    for (short int i=location.spot-1; i>=0; i--) {
+    for (short int i=0; i<location.spot; i++) {
         auto it = config.find({LocationType::ROOM, location.index, i});
         if (it != config.end())
-        return false;
+            return false;
     }
     return true;
 }
 
 bool solved(const AmphipodConfiguration& config, const short int spots_per_room) {
-    for (const auto& [location, type]: config)
-        if (need_to_move(config, location, type, spots_per_room))
+    for (const auto& [location, type]: config) {
+        if (location.type != LocationType::ROOM)
             return false;
-
+        if (location.index != type_to_room.at(type))
+            return false;
+    }
     return true;
 }
 
 std::vector<Location> rooms_available(const AmphipodConfiguration& config, const AmphipodType amph_type, const short int spots_per_room) {
-    if (amph_type == AmphipodType::NONE) {
-        return std::vector<Location>();
-    }
+    std::vector<Location> result;
 
     short int needed_room = type_to_room.at(amph_type);
+    short int min_occupied = spots_per_room;
     short int n_occupiers = 0;
-    bool occupied_by_other_type = false;
 
-    for (const auto& [location, type]: config) {
-        if ((location.type == LocationType::ROOM) && (location.index == needed_room)) {
-            n_occupiers++;
-            if (type_to_room.at(type) != needed_room) {
-                occupied_by_other_type = true;
+    for (short int slot=0; slot<spots_per_room; slot++) {
+        auto it = config.find({LocationType::ROOM, needed_room, slot});
+        if (it != config.end()) {
+            min_occupied = std::min(min_occupied, slot);
+            if (it->second == amph_type) {
+                n_occupiers++;
+            } else {
+                // occupied by others type - bail
+                return result;
             }
-        }
+        } 
     }
 
-    std::vector<Location> result;
-    if (occupied_by_other_type)
-        return result;
+    if (min_occupied > 0) 
+        result.push_back(Location{LocationType::ROOM, needed_room, (short int)(min_occupied-1)});
 
-    if (n_occupiers < spots_per_room) {
-        result.push_back(Location{LocationType::ROOM, needed_room, (short int)(spots_per_room-n_occupiers-1)});
-    }
     return result;
 }
 
@@ -170,10 +177,8 @@ bool hallway_path_blocked(const AmphipodConfiguration& config, const Location& f
 
     start_hallway = (to_hallway > start_hallway) ? start_hallway + 1 : start_hallway - 1;
 
-    for (const auto& [location, type]: config) {
-        if (location.type != LocationType::HALLWAY) 
-            continue;
-        if ((location.index >= std::min(start_hallway, to_hallway)) && (location.index <= std::max(start_hallway, to_hallway)))
+    for (short int i=std::min(start_hallway, to_hallway); i<=std::max(start_hallway, to_hallway); i++) {
+        if (config.find({LocationType::HALLWAY, i, 0}) != config.end())
             return true;
     }
     return false;
@@ -197,14 +202,6 @@ std::vector<Location> hallway_positions_available(const AmphipodConfiguration &c
     return result;
 }
 
-struct Transition {
-    Location from, to;
-    AmphipodType amph_type;
-    bool operator==(const Transition& other) const {
-        return (from == other.from) && (to == other.to) && (amph_type == other.amph_type);
-    }
-};
-
 std::vector<Transition> legal_moves(const AmphipodConfiguration& configuration, const short int spots_per_room) {
     std::vector<Transition> result;
 
@@ -225,12 +222,12 @@ std::vector<Transition> legal_moves(const AmphipodConfiguration& configuration, 
                 break;
             case LocationType::ROOM :
                 // from a room, the only valid move is to a hallway or to the final room
-                // Do I not need to move?
-                if (!need_to_move(configuration, location, inhabitant, spots_per_room)) 
-                    continue;
-
                 // Am I blocked in anyway?
                 if (!top_of_room(configuration, location)) 
+                    continue;
+
+                // Do I not need to move?
+                if (!need_to_move(configuration, location, inhabitant, spots_per_room)) 
                     continue;
 
                 for (const auto& to: available_rooms[inhabitant] ) {
@@ -331,7 +328,7 @@ AmphipodConfiguration unfold(const AmphipodConfiguration& config) {
     for (const auto& [location, type]: config) {
         if (location.type == ROOMTYPE) {
             if (location.spot == 1) {
-                for (short int newspot=2; newspot<=4; newspot++) {
+                for (short int newspot=2; newspot<4; newspot++) {
                     unfolded[{ROOMTYPE, location.index, newspot}] = type;
                 }
             }
@@ -380,5 +377,4 @@ int main(int argc, char** argv) {
     std::cout << configuration_to_string(ac_unfolded, 4) << std::endl;
     energy = minimum_energy_path(ac_unfolded, 4);
     std::cout << "     Energy: " << energy << std::endl << std::endl;
-
 }
