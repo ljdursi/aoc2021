@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
 
     unsigned int nmoves = 0;
     std::set<int> output_moves({0,1,2,3,4,5,10,20,30,40,50,55,56,57,58});
-    for (;nmoves < 59; nmoves++) {
+    for (;nmoves < 57; nmoves++) {
         if (output_moves.find(nmoves) != output_moves.end()) {
             std::cout << "After " << nmoves << " steps:" << std::endl;
             std::cout << board << std::endl;
