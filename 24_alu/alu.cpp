@@ -53,6 +53,7 @@ class ASTNode {
         ASTNode(int value) : op(ASSIGN), children(), is_literal(true), is_input(false), value(value), inputs(), min_value(value), max_value(value) {}
         ASTNode(short int input) : op(INPUT), children(), is_literal(false), is_input(true), value(input), inputs({input}), min_value(1), max_value(9) {}
         ASTNode& operator=(const ASTNode& other);
+        ASTNode& operator[](const short int idx) { return children[idx]; }
         bool set_value(int value) {
             if (is_literal) {
                 this->value = value;
@@ -66,6 +67,7 @@ class ASTNode {
 
         bool literal() const { return is_literal; };
         bool input() const { return is_input; };
+        ASTNode::opcodes type() const { return op; };
 
         std::pair<int, int> range() const { return {min_value, max_value}; }
         std::set<short int> inputs_used() const { return inputs; };
@@ -168,7 +170,7 @@ class ALU {
         std::string to_code() const {
             std::string s = "";
             for (short int i=0; i<variables.size(); i++) {
-                s = s + (char)('w' + (char)i) + " = " + variables[i].as_code() + ";\n";
+                s = s + (char)('w' + (char)i) + " = " + variables[i].as_code() + ";" + "  // " + std::to_string(variables[i].range().first) + "... " + std::to_string(variables[i].range().second) + "\n";
             }
             return s;
         }
@@ -219,7 +221,7 @@ void ALU::add_instruction(const std::string& instruction, const std::string& var
                 variables[idx] = ASTNode((int)0);
                 break;
             }
-                
+
             variables[idx] = new_node;
             break;
 
@@ -266,6 +268,25 @@ void ALU::add_instruction(const std::string& instruction, const std::string& var
                 break;
             }
 
+            // if we're dividing by something we've recently multiplied by the same number,
+            // we can cancel out the operations
+            if (right_node.inputs_used().empty()) {
+                int div_val = right_node.eval({});
+
+                if (variables[idx].type() == ASTNode::ADD) {
+                    if (variables[idx][0].type() == ASTNode::MUL) {
+                        if (variables[idx][0][1].inputs_used().empty() && variables[idx][0][1].eval({}) == div_val) {
+                            auto right_range = variables[idx][1].range();
+                            if ((abs(right_range.first) < div_val) && (abs(right_range.second) < div_val)) {
+                                auto copy = variables[idx][0][0];
+                                variables[idx] = copy;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             variables[idx] = new_node;
             break;
 
@@ -305,6 +326,23 @@ void ALU::add_instruction(const std::string& instruction, const std::string& var
                     break;
                 }
             }
+
+            // if we're modding by something we've recently multiplied by the same number,
+            // we can just set the value to zero
+            if (right_node.inputs_used().empty()) {
+                int mod_val = right_node.eval({});
+
+                if (variables[idx].type() == ASTNode::ADD) {
+                    if (variables[idx][0].type() == ASTNode::MUL) {
+                        if (variables[idx][0][1].inputs_used().empty() && variables[idx][0][1].eval({}) == mod_val) {
+                            variables[idx] = ASTNode(ASTNode::ADD, {ASTNode((int)0), variables[idx][1]});
+                            variables[idx] = ASTNode(opcode, {variables[idx], right_node});
+                            break;
+                        }
+                    }
+                }
+            }
+
             variables[idx] = new_node;
             break;
 
