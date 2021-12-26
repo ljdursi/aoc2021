@@ -376,7 +376,7 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        const std::regex op_literal_regex("(add|mul|div|mod|eql) ([wxzy]) (\\d+)");
+        const std::regex op_literal_regex("(add|mul|div|mod|eql) ([wxzy]) ([-]?\\d+)");
         if (std::regex_match(line, smatch, op_literal_regex)) {
             alu.add_instruction(smatch[1], smatch[2], true, "", std::stoi(smatch[3]));
             continue;
